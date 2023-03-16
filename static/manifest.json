@@ -1,0 +1,19 @@
+{
+	"name": "Toronto Bike Share Visualizer",
+	"description": "Helps digest and save bike share data (you own it after all), and has some nifty visualization stuff in it as well",
+	"version": "1.0.0",
+	"manifest_version": 3,
+	"permissions": ["activeTab", "storage"],
+	"content_scripts": [
+		{
+			"matches": ["https://members.bikesharetoronto.com/*"],
+			"exclude_matches": ["https://members.bikesharetoronto.com/login"],
+			"js": ["contentScript.js"]
+		}
+	],
+	"action": {
+		"default_title": "Svelte Extension",
+		"default_icon": "favicon.png",
+		"default_popup": "index.html"
+	}
+}
