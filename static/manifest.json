@@ -6,8 +6,10 @@
 	"permissions": ["activeTab", "storage"],
 	"content_scripts": [
 		{
-			"matches": ["https://members.bikesharetoronto.com/*"],
-			"exclude_matches": ["https://members.bikesharetoronto.com/login"],
+			"matches": [
+				"https://members.bikesharetoronto.com/trips",
+				"https://members.bikesharetoronto.com/trips*"
+			],
 			"js": ["contentScript.js"]
 		}
 	],

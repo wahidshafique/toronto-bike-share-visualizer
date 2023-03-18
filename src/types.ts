@@ -6,4 +6,9 @@ export interface bikeRide {
 	endStation: string;
 	bikeID: string;
 }
+
+export interface bikeProcessResults {
+	itemsDownloaded: number;
+}
+
 export type allBikeRidesInPeriod = bikeRide[];

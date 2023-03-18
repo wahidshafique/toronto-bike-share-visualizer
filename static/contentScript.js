@@ -15,8 +15,8 @@
 const BASE_URL = 'https://members.bikesharetoronto.com/trips';
 
 const parseDateForApi = (d) => {
-	// api loves the mm-dd-yyyy format
-	const formatter = new Intl.DateTimeFormat('en-US', {
+	// api loves the dd-mm-yyyy format
+	const formatter = new Intl.DateTimeFormat('en-GB', {
 		month: '2-digit',
 		day: '2-digit',
 		year: 'numeric'
@@ -24,13 +24,62 @@ const parseDateForApi = (d) => {
 	return formatter.format(d).toString().replaceAll('/', '-');
 };
 
+const adjustStoredDate = (d) => {
+	const tempDate = new Date(d);
+	// of the given date we need to add one 1
+	// we do this because the api only cares about dates and not times
+	// so it will double submit the entries from the last stored date, which we do not want
+	tempDate.setDate(tempDate.getDate() + 1);
+	return tempDate;
+};
+
 const fetchHistoricalRides = async () => {
-	const today = new Date();
 	console.log('Collecting historical bike rides');
-	const customPeriodResponse = await fetch(
-		// date format is dd-mm-yyyy
-		`${BASE_URL}?period=custom&date%5Bstart%5D=04-01-2023&date%5Bend%5D=${parseDateForApi(today)}`
+
+	const { allBikeRidesInPeriod: storedAllBikeRidesInPeriod = [] } = await chrome.storage.local.get(
+		'allBikeRidesInPeriod'
 	);
+
+	console.log('in local', storedAllBikeRidesInPeriod);
+
+	const lastStoredItem =
+		storedAllBikeRidesInPeriod?.length > 0 && [...storedAllBikeRidesInPeriod]?.reverse()[0];
+	const bikeShareEstablishedDate = new Date('January 1, 2011');
+	// either we start at the very beginning (if you are running this for first time), or start at where you last left off
+	console.log('last stored item, ', lastStoredItem);
+	// start at the last known stored date or the epoch of bike share foundation
+	const startDate = lastStoredItem?.endTime
+		? adjustStoredDate(lastStoredItem.endTime)
+		: bikeShareEstablishedDate;
+	const todaysDate = new Date();
+
+	// Calculate the number of milliseconds between the start date and today's date
+	const millisecondsElapsed = Math.abs(todaysDate - startDate);
+
+	// get days elapsed but divide by 15 since we are moving in 15 day increments in our loop
+	const fortnightsElapsed = Math.ceil(millisecondsElapsed / (1000 * 60 * 60 * 24) / 15);
+	console.log('fortnights elapsed ', fortnightsElapsed);
+
+	// Loop through the weeks since start and create start and end dates for each
+	for (let i = 0; i < fortnightsElapsed; i++) {
+		// Calculate the start and end dates for this increment
+		const localStartDate = new Date();
+		localStartDate.setDate(localStartDate.getDate() - (i + 1) * 15);
+		const localEndDate = new Date();
+		localEndDate.setDate(localEndDate.getDate() - i * 15);
+	}
+	const parsedStartDate = parseDateForApi(startDate);
+	const parsedTodaysDate = parseDateForApi(todaysDate);
+	console.log(parsedStartDate, parsedTodaysDate);
+	const customPeriodResponse =
+		parsedStartDate === parsedTodaysDate
+			? await fetch(`${BASE_URL}?period=today`)
+			: await fetch(
+					// date format is dd-mm-yyyy
+					`${BASE_URL}?period=custom&date%5Bstart%5D=${parseDateForApi(
+						startDate
+					)}&date%5Bend%5D=${parseDateForApi(todaysDate)}`
+			  );
 
 	const customPeriodBodyText = await customPeriodResponse.text();
 
@@ -61,12 +110,30 @@ const fetchHistoricalRides = async () => {
 		});
 	});
 
-	chrome.storage.local.set({ allBikeRidesInPeriod });
+	await chrome.storage.local.set({
+		allBikeRidesInPeriod: [...storedAllBikeRidesInPeriod, ...allBikeRidesInPeriod]
+	});
 
-	console.log(allBikeRidesInPeriod);
+	return {
+		itemsDownloaded: allBikeRidesInPeriod?.length
+	};
 };
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-	console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
-	if (request.greeting === 'hello') sendResponse({ farewell: 'goodbye' });
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+	const shouldStartDownoad = msg.startDownload;
+
+	if (shouldStartDownoad) {
+		fetchHistoricalRides().then(({ itemsDownloaded }) => {
+			sendResponse({
+				complete: true,
+				results: {
+					itemsDownloaded
+				}
+			});
+		});
+
+		// return true from the event listener to indicate you wish to send a response asynchronously
+		// (this will keep the message channel open to the other end until sendResponse is called).
+		return true;
+	}
 });

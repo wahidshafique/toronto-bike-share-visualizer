@@ -1,37 +1,52 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { allBikeRidesInPeriod, bikeRide } from '../types';
+	import type { allBikeRidesInPeriod, bikeRide, bikeProcessResults } from '../types';
 	let isOnBikeShareSite = true;
 	let lastSyncedBikeRide: bikeRide;
+	let allRides: allBikeRidesInPeriod;
+	let processResults: bikeProcessResults;
 
 	onMount(() => {
 		chrome.storage.local
-			.get(['allBikeRidesInPeriod'])
+			.get('allBikeRidesInPeriod')
 			.then(({ allBikeRidesInPeriod }: { allBikeRidesInPeriod: allBikeRidesInPeriod }) => {
-				lastSyncedBikeRide = allBikeRidesInPeriod.reverse()[0];
+				if (allBikeRidesInPeriod) {
+					lastSyncedBikeRide = allBikeRidesInPeriod.reverse()[0];
+					allRides = allBikeRidesInPeriod;
+				}
 			});
-		// chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-		// 	isOnBikeShareSite = true;
-		// 	console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
-		// 	if (request.greeting === 'hello') sendResponse({ farewell: 'goodbye' });
-		// });
 	});
 
 	let isProcessing = false;
+
 	const sendContentScriptDownloadMessage = async () => {
 		// tells the script on the page to start aggregating historical data
 		isProcessing = true;
 		const [tab] = await chrome.tabs.query({
 			active: true,
-			url: 'https://members.bikesharetoronto.com/*',
+			url: 'https://members.bikesharetoronto.com/trips',
 			status: 'complete'
 		});
-
-		isOnBikeShareSite = !!tab;
+		if (tab?.id) {
+			isOnBikeShareSite = true;
+			const response = await chrome.tabs.sendMessage(tab.id, { startDownload: true });
+			if (response.complete) {
+				isProcessing = false;
+				processResults = response.results;
+			}
+		} else {
+			isOnBikeShareSite = false;
+			isProcessing = false;
+		}
 	};
 </script>
 
 <div>
+	<header>
+		{#if lastSyncedBikeRide}
+			<p>Last Synced Bike Ride: {lastSyncedBikeRide?.endTime}</p>
+		{/if}
+	</header>
 	<section class="mt-3">
 		<button
 			disabled={isProcessing}
@@ -71,18 +86,32 @@
 		</button>
 		{#if !isOnBikeShareSite}
 			<p class="mt-1">
-				Please login to: <a class="underline" href="https://members.bikesharetoronto.com/"
-					>https://members.bikesharetoronto.com/</a
+				Please visit/login to: <a
+					class="underline"
+					href="https://members.bikesharetoronto.com/trips"
+					>https://members.bikesharetoronto.com/trips</a
 				> and try again!
+			</p>
+		{/if}
+		{#if processResults}
+			<p class="mt-1">
+				Downloaded {processResults.itemsDownloaded} item(s) {#if processResults.itemsDownloaded === 0}
+					<span class="font-bold text-primary"> Get out there and ride! 🚴‍♀️</span>
+				{/if}
 			</p>
 		{/if}
 	</section>
 
-	<footer class="absolute bottom-0">
-		{#if lastSyncedBikeRide}
-			<p>Last Synced Bike Ride: {lastSyncedBikeRide?.endTime}</p>
+	<section>
+		{#if allRides}
+			{#each allRides as ride}
+				<div class="my-2 p-2 border-solid border-2 border-secondary">
+					<p>Start: {ride.startTime}</p>
+					<p>End: {ride.endTime}</p>
+				</div>
+			{/each}
 		{/if}
-	</footer>
+	</section>
 
 	<!-- <a class="text-3xl font-bold underline" href="/about">About</a> -->
 </div>
