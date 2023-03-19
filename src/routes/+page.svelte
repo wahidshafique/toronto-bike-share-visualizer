@@ -11,7 +11,7 @@
 			.get('allBikeRidesInPeriod')
 			.then(({ allBikeRidesInPeriod }: { allBikeRidesInPeriod: allBikeRidesInPeriod }) => {
 				if (allBikeRidesInPeriod) {
-					lastSyncedBikeRide = allBikeRidesInPeriod.reverse()[0];
+					lastSyncedBikeRide = allBikeRidesInPeriod[0];
 					allRides = allBikeRidesInPeriod;
 				}
 			});
@@ -49,9 +49,9 @@
 	</header>
 	<section class="mt-3">
 		<button
-			disabled={isProcessing}
+			disabled={isProcessing || processResults?.itemsDownloaded === 0}
 			on:click={sendContentScriptDownloadMessage}
-			class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center"
+			class="bg-gray-300 hover:bg-gray-400 disabled:pointer-events-none disabled:bg-opacity-50 disabled:text-opacity-50 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center"
 		>
 			{#if isProcessing}
 				<svg
@@ -104,6 +104,7 @@
 
 	<section>
 		{#if allRides}
+			<h1 class="my-2 text-primary text-xl">{allRides.length} ride(s) on record</h1>
 			{#each allRides as ride}
 				<div class="my-2 p-2 border-solid border-2 border-secondary">
 					<p>Start: {ride.startTime}</p>
