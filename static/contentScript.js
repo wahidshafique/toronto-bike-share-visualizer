@@ -62,24 +62,22 @@ const parseDateForApi = (d) => {
 	return formatter.format(d).toString().replaceAll('/', '-');
 };
 
-const fetchCustomPeriodForBikeRides = async ({ startDate, todaysDate }) => {
-	if (startDate.getTime() > todaysDate.getTime()) {
+const fetchCustomPeriodForBikeRides = async ({ startDate, endDate }) => {
+	if (startDate.getTime() > endDate.getTime()) {
 		// impossible condition
+		console.error('start date is greater than end date!');
 		return null;
 	}
 	return fetch(
 		// date format is dd-mm-yyyy
 		`${BASE_URL}?period=custom&date%5Bstart%5D=${parseDateForApi(
 			startDate
-		)}&date%5Bend%5D=${parseDateForApi(todaysDate)}`
+		)}&date%5Bend%5D=${parseDateForApi(endDate)}`
 	);
 };
 
 const fetchHistoricalRides = async () => {
-	//debugger;
 	console.log('Collecting historical bike rides');
-	// debugger;
-
 	const { allBikeRidesInPeriod: storedAllBikeRidesInPeriod = [] } = await chrome.storage.local.get(
 		'allBikeRidesInPeriod'
 	);
@@ -94,18 +92,20 @@ const fetchHistoricalRides = async () => {
 		: BIKE_SHARE_ESTABLISHED_DATE;
 	const todaysDate = new Date();
 
+	// since the api only cares about dates at large, no need to fuss with extra time values
 	startDate.setHours(0, 0, 0, 0);
 	todaysDate.setHours(0, 0, 0, 0);
 
 	// Calculate the number of milliseconds between the start date and today's date
 	const millisecondsElapsed = Math.abs(todaysDate - startDate);
 	// get days elapsed but divide by 15 since we are moving in 15 day increments in our loop
+	// if millisecondsElapsed is zero, this means you rode your bike within this ~2 week period
+	// I slot the value to 1 anyways and let the deduping in the loop shake it out
 	const fortnightsElapsed = Math.ceil(millisecondsElapsed / (1000 * 60 * 60 * 24) / 15) || 1;
 
 	let allBikeRidesInPeriod = [];
-	// Loop through the weeks since start and create start and end dates for each
 	for (let i = 0; i < fortnightsElapsed; i++) {
-		// Calculate the start and end dates for this increment
+		// Calculate the start and end dates for this increment, like feb 02 - feb 17 etc. etc.
 		const localStartDate = new Date();
 		localStartDate.setDate(localStartDate.getDate() - (i + 1) * 15);
 		const localEndDate = new Date();
@@ -116,18 +116,19 @@ const fetchHistoricalRides = async () => {
 
 		const customPeriodResponse = await fetchCustomPeriodForBikeRides({
 			startDate: localStartDate,
-			todaysDate: localEndDate
+			endDate: localEndDate
 		});
 
 		if (customPeriodResponse) {
 			console.log('Crawling', localStartDate, localEndDate);
 			const customPeriodBodyText = await customPeriodResponse?.text();
-			// TODO: we also need to dedupe this in case you had more bike rides on the same "last ridden date"
 			let crawledData = crawlBikeRideHtml(customPeriodBodyText);
 			if (crawledData.length > 0) {
 				// lets say we have 03-18-2022 as the last stored item's "end date"
-				// we need to see if our local crawler end date happens be _after_ the stored one
+				// we need to see if our local crawler end date (the one in this loop) happens be _after_ the stored one
 				// if so, then run a dedupe because it means we are going over overlapping ranges
+				// this is imprecise, but good enough for our purposes, its just "softly" scanning date ranges
+				// because the API for this does not accept precise time values, only whole dates, so overlaps are inevitable
 				if (lastStoredItem && localEndDate >= startDate) {
 					console.log('⿻ overlapping entries found, filtering them out!');
 					crawledData = crawledData.filter((e) => {
@@ -139,7 +140,6 @@ const fetchHistoricalRides = async () => {
 						return !crawlDataAlreadyExists;
 					});
 				}
-				console.log('crawled ', crawledData);
 				allBikeRidesInPeriod = [...allBikeRidesInPeriod, ...crawledData.reverse()];
 			}
 		}

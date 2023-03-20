@@ -8,6 +8,10 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
+		alias: {
+			stores: './src/stores.ts',
+			components: './src/components'
+		},
 		adapter: adapter({
 			// default options are shown
 			pages: 'build',

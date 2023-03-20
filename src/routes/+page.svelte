@@ -1,23 +1,37 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import type { allBikeRidesInPeriod, bikeRide, bikeProcessResults } from '../types';
+	import { allRidesStore } from 'stores';
+	import moment from 'moment';
+	import type { BikeRide, BikeProcessResults, AllBikeRidesInPeriod } from '../types';
+
 	let isOnBikeShareSite = true;
-	let lastSyncedBikeRide: bikeRide;
-	let allRides: allBikeRidesInPeriod;
-	let processResults: bikeProcessResults;
+	let lastSyncedBikeRide: BikeRide;
+	let firstBikeRide: BikeRide;
+	let processResults: BikeProcessResults;
+	let allRides: AllBikeRidesInPeriod;
 
-	onMount(() => {
-		chrome.storage.local
-			.get('allBikeRidesInPeriod')
-			.then(({ allBikeRidesInPeriod }: { allBikeRidesInPeriod: allBikeRidesInPeriod }) => {
-				if (allBikeRidesInPeriod) {
-					lastSyncedBikeRide = allBikeRidesInPeriod[0];
-					allRides = allBikeRidesInPeriod;
-				}
-			});
+	allRidesStore.subscribe((r) => {
+		allRides = r;
+		lastSyncedBikeRide = r[0];
+		firstBikeRide = r.at(-1);
 	});
-
 	let isProcessing = false;
+
+	const downloadFileFromText = (filename, content) => {
+		var a = document.createElement('a');
+		var blob = new Blob([content], { type: 'text/plain;charset=UTF-8' });
+		a.href = window.URL.createObjectURL(blob);
+		a.download = filename;
+		a.style.display = 'none';
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+	};
+
+	const downloadDataLocally = (e) => {
+		const start = moment(firstBikeRide.startTime).format('L');
+		const end = moment(lastSyncedBikeRide.startTime).format('L');
+		downloadFileFromText(`tbs-${start}-${end}.json`, JSON.stringify(allRides));
+	};
 
 	const sendContentScriptDownloadMessage = async () => {
 		// tells the script on the page to start aggregating historical data
@@ -42,16 +56,23 @@
 </script>
 
 <div>
-	<header>
-		{#if lastSyncedBikeRide}
-			<p>Last Synced Bike Ride: {lastSyncedBikeRide?.endTime}</p>
-		{/if}
-	</header>
+	<h1 class="text-2xl text-primary">Bike Share Visualizer 🚲</h1>
 	<section class="mt-3">
+		<p>
+			This extension requires you to login to your account and visit the <a
+				href="https://members.bikesharetoronto.com/trips"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="underline text-primary"
+			>
+				trips page</a
+			>. Once there, hit "sync" below. The first time this runs, it might take a while. When
+			processing, please do not navigate away from the trips page.
+		</p>
 		<button
 			disabled={isProcessing || processResults?.itemsDownloaded === 0}
 			on:click={sendContentScriptDownloadMessage}
-			class="bg-gray-300 hover:bg-gray-400 disabled:pointer-events-none disabled:bg-opacity-50 disabled:text-opacity-50 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center"
+			class="mt-3 bg-gray-300 hover:bg-gray-400 disabled:pointer-events-none disabled:bg-opacity-50 disabled:text-opacity-50 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center"
 		>
 			{#if isProcessing}
 				<svg
@@ -76,17 +97,16 @@
 				</svg>
 				Processing...
 			{:else}
-				<svg
-					class="fill-current w-4 h-4 mr-2"
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 20 20"><path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" /></svg
-				>
-				<span>Download Your Bike Share Data</span>
+				<span>↻ Sync Latest Data</span>
 			{/if}
 		</button>
+		{#if lastSyncedBikeRide}
+			<p class="text-[10px]">Last Synced Bike Ride: {lastSyncedBikeRide?.endTime}</p>
+		{/if}
 		{#if !isOnBikeShareSite}
-			<p class="mt-1">
+			<p class="mt-1 text-red-400">
 				Please visit/login to: <a
+					target="_blank"
 					class="underline"
 					href="https://members.bikesharetoronto.com/trips"
 					>https://members.bikesharetoronto.com/trips</a
@@ -101,18 +121,19 @@
 			</p>
 		{/if}
 	</section>
-
-	<section>
-		{#if allRides}
-			<h1 class="my-2 text-primary text-xl">{allRides.length} ride(s) on record</h1>
-			{#each allRides as ride}
-				<div class="my-2 p-2 border-solid border-2 border-secondary">
-					<p>Start: {ride.startTime}</p>
-					<p>End: {ride.endTime}</p>
-				</div>
-			{/each}
+	<div class="mt-3">
+		{#if lastSyncedBikeRide}
+			<p class="mt-1">
+				You can download your previously synced data here if you choose, the format is <code
+					>JSON</code
+				>.
+			</p>
+			<button
+				disabled={isProcessing}
+				on:click={downloadDataLocally}
+				class="mt-3 bg-gray-300 hover:bg-gray-400 disabled:pointer-events-none disabled:bg-opacity-50 disabled:text-opacity-50 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center"
+				><span>↓ Download your data</span>
+			</button>
 		{/if}
-	</section>
-
-	<!-- <a class="text-3xl font-bold underline" href="/about">About</a> -->
+	</div>
 </div>

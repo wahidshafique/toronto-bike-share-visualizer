@@ -1,4 +1,4 @@
-export interface bikeRide {
+export interface BikeRide {
 	startTime: string;
 	duration: string;
 	endTime: string;
@@ -7,8 +7,10 @@ export interface bikeRide {
 	bikeID: string;
 }
 
-export interface bikeProcessResults {
+export type BikeRideKeys = keyof BikeRide;
+
+export interface BikeProcessResults {
 	itemsDownloaded: number;
 }
 
-export type allBikeRidesInPeriod = bikeRide[];
+export type AllBikeRidesInPeriod = BikeRide[];
