@@ -56,7 +56,9 @@
 </script>
 
 <div>
-	<h1 class="text-2xl text-primary">Bike Share Visualizer 🚲</h1>
+	<h1 class="text-2xl text-primary">
+		Bike Share Visualizer <img class="inline" src="favicon-32x32.png" alt="" srcset="" />
+	</h1>
 	<section class="mt-3">
 		<p>
 			This extension requires you to login to your account and visit the <a

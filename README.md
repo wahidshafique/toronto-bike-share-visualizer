@@ -1,38 +1,19 @@
-# create-svelte
+# Toronto Bike Share Visualizer
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+## Why
 
-## Creating a project
+> Disclaimer: Obviously the details and functionality of this extension may change over time, but it solves a need in the now, rather than hoping for better UX on BikeShares end.
 
-If you're seeing this, you've probably already done this step. Congrats!
+It all started when I wanted to just get an overview/some simple stats on my own Bike Share [activity](https://members.bikesharetoronto.com/overview). However, the site just has a list of your rides, with a quite annoying process of grabbing it.
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+![img of bike share ride list](readme/Screen%20Shot%202023-03-20%20at%206.46.25%20PM.png)
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+Within _any_ custom time window, the site only displays the last `50` entries (at most). Sadly, it has no pagination 🤦.
 
-## Developing
+So what I really needed to achieve as a baseline, was a way to grab all of my data. I figured that within 15 day chunks, `50` rides would be reasonable, and to get all my rides I'd just need to decrement by said chunks until I reach the "Bikeshare epoch", which is around 2011 (though 2014 is when it became [Bikeshare Toronto](https://en.wikipedia.org/wiki/Bike_Share_Toronto). However I can't say if there was a data migration between those times, so I am keeping it there to be safe.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+# How do I use it
 
-```bash
-npm run dev
+Ok you're a Bikeshare user who's stumbled on this repository (pending its official release on the chrome store).
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+To use it, simply download the latest release (on the Github release page). You can follow instructions listed [here](https://dev.to/ben/how-to-install-chrome-extensions-manually-from-github-1612). Since I provide a .zip, you will need to make sure to extract it first.

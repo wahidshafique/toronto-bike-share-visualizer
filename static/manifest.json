@@ -15,7 +15,7 @@
 	],
 	"action": {
 		"default_title": "Svelte Extension",
-		"default_icon": "favicon.png",
+		"default_icon": "favicon-32x32.png",
 		"default_popup": "index.html"
 	}
 }
