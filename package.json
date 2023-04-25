@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"zip": "zip -r builds/toronto-bike-share-viz.zip build",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -36,6 +37,11 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"d3-collection": "^1.0.7",
+		"d3-sankey": "^0.12.3",
+		"d3-scale": "^4.0.2",
+		"d3-time": "^3.1.0",
+		"layercake": "^7.3.4",
 		"moment": "^2.29.4"
 	}
 }

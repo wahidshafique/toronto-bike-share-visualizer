@@ -6,7 +6,9 @@
 
 <section>
 	{#if $allRidesStore}
-		<RideMetrics />
-		<LocationMetrics />
+		<div class="mb-8">
+			<RideMetrics />
+			<LocationMetrics />
+		</div>
 	{/if}
 </section>

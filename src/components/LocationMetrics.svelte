@@ -4,8 +4,6 @@
 	import { getMostFrequent } from '../utils/getMostFrequent';
 
 	$: mostFrequented = getMostFrequent($allRidesStore, 'startStation', 'endStation');
-
-	console.log(mostFrequented);
 </script>
 
 <div>

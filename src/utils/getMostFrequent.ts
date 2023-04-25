@@ -21,6 +21,7 @@ const getMostFrequent = (
 		}
 	}
 
+	console.log(freqCount);
 	let highestCount = 0;
 	let highestItem = '';
 
