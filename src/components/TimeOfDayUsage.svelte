@@ -94,7 +94,7 @@
 					formatTick={(d) => `${Math.floor(d / 60 / 60)}:00`}
 				/>
 				<AxisY />
-				<Scatter r={scatterCircleRadius} fill={'rgba(255, 204, 0, 0.75)'} />
+				<Scatter r={scatterCircleRadius} fill={'rgba(48,180,89, 0.75)'} />
 			</Svg>
 		</LayerCake>
 	</div>
