@@ -5,6 +5,7 @@ export interface BikeRide {
 	startStation: string;
 	endStation: string;
 	bikeID: string;
+	price: string;
 }
 
 export type BikeRideKeys = keyof BikeRide;

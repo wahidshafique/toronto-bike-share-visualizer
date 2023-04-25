@@ -36,6 +36,8 @@ const crawlBikeRideHtml = (htmlToCrawl) => {
 			.querySelector('.start-station-name-block .text-large')
 			?.textContent?.trim();
 		const endStation = br.querySelector('.end-station-name-block .text-large')?.textContent?.trim();
+		// I think this is for e-Bikes/overages only
+		const price = br.querySelector('.end-station-name-block .text-small')?.textContent?.trim();
 		/** ~shudders~ */
 		const bikeID = br.querySelector('.start-station-name-block .text-small')?.textContent?.trim();
 
@@ -46,7 +48,8 @@ const crawlBikeRideHtml = (htmlToCrawl) => {
 			endTime,
 			startStation,
 			endStation,
-			bikeID
+			bikeID,
+			price: price || null
 		});
 	});
 	return rides;
@@ -76,8 +79,25 @@ const fetchCustomPeriodForBikeRides = async ({ startDate, endDate }) => {
 	);
 };
 
+const createLoaderDiv = () => {
+	const loaderDiv = document.createElement('div');
+	loaderDiv.style.cssText =
+		'position:absolute;width:100%;height:100%;z-index:100;background:#000;top:0;';
+	loaderDiv.innerHTML = `
+		<div style="display: grid; place-items: center; height: inherit; color: white; ">
+			<h1 style="font-size: 7rem; color: inherit">Loading <span id="bs-status">0 of 0</span></h1>
+			<small>don't close the tab<small>
+		</div>
+		`;
+	return loaderDiv;
+};
+
 const fetchHistoricalRides = async () => {
 	console.log('Collecting historical bike rides');
+	// visually overlay page with an info/spinner
+	const loaderDiv = createLoaderDiv();
+	document.body.appendChild(loaderDiv);
+
 	const { allBikeRidesInPeriod: storedAllBikeRidesInPeriod = [] } = await chrome.storage.local.get(
 		'allBikeRidesInPeriod'
 	);
@@ -105,6 +125,9 @@ const fetchHistoricalRides = async () => {
 
 	let allBikeRidesInPeriod = [];
 	for (let i = 0; i < fortnightsElapsed; i++) {
+		if (i > 1) {
+			document.getElementById('bs-status').innerText = `${i}/${fortnightsElapsed}`;
+		}
 		// Calculate the start and end dates for this increment, like feb 02 - feb 17 etc. etc.
 		const localStartDate = new Date();
 		localStartDate.setDate(localStartDate.getDate() - (i + 1) * 15);
@@ -148,6 +171,8 @@ const fetchHistoricalRides = async () => {
 	await chrome.storage.local.set({
 		allBikeRidesInPeriod: [...allBikeRidesInPeriod, ...storedAllBikeRidesInPeriod]
 	});
+
+	loaderDiv.remove();
 
 	return {
 		itemsDownloaded: allBikeRidesInPeriod?.length

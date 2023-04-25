@@ -12,6 +12,9 @@
 			<li>
 				<a href="/all-rides-list" class="mr-4 hover:underline md:mr-6 ">View All Rides</a>
 			</li>
+			<li>
+				<a href="/delete-rides" class="mr-4 hover:underline md:mr-6 ">Delete All Rides</a>
+			</li>
 
 			<!-- <li>
 				<a href="#" class="mr-4 hover:underline md:mr-6">Privacy Policy</a>
