@@ -10,7 +10,7 @@ const getTotalSpent = (allRides: AllBikeRidesInPeriod) => {
 		return acc;
 	}, 0);
 
-	return totalSpent;
+	return totalSpent.toFixed(2);
 };
 
 export default getTotalSpent;
